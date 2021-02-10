@@ -8,6 +8,7 @@ import unfavoriteIcon from '../../assets/images_nlw-2/icons/unfavorite.png';
 import whatsappIcon from '../../assets/images_nlw-2/icons/whatsapp.png';
 
 import styles from './styles';
+import api from '../../service/api';
 
 export interface Teacher {
   id: number;
@@ -28,26 +29,39 @@ const TeacherItem: React.FC<TeacherItemProps> = ({ teacher, favorited }) => {
   const [isFavorited, setIsFavorited] = useState(favorited);
   
   function handleLinkToWhatsapp() {
+    api.post('connections', {
+      user_id: teacher.id,
+    })
+    
     Linking.openURL(`whatsapp://send?phone=${teacher.whatsapp}`)
   }
 
   async function handleToggleFavorite() {
+    const favorites = await AsyncStorage.getItem('favorites');
+
+    let favoritesArray =[];
+
+    if (favorites) {
+      favoritesArray = JSON.parse(favorites);
+    }
+    
     if (isFavorited) {
+      const favoriteIndex = favoritesArray.findIndex((teacherItem: Teacher) => {
+        return teacherItem.id === teacher.id;
+      });
 
+      favoritesArray.splice(favoriteIndex, 1);
+
+      setIsFavorited(false);
     } else {
-      const favorites = await AsyncStorage.getItem('favorites');
-
-      let favoritesArray =[];
-
-      if (favorites) {
-        favoritesArray = JSON.parse(favorites);
-      }
-
       favoritesArray.push(teacher);
 
       setIsFavorited(true);
-      await AsyncStorage.setItem('favorites', JSON.stringify(favoritesArray))
+      
     }
+    
+    await AsyncStorage.setItem('favorites', JSON.stringify(favoritesArray))
+    
   }
   
   return (
@@ -88,7 +102,7 @@ const TeacherItem: React.FC<TeacherItemProps> = ({ teacher, favorited }) => {
             
           </RectButton>
 
-          <RectButton style={styles.contactButton}>
+          <RectButton onPress={handleLinkToWhatsapp} style={styles.contactButton}>
             <Image source={whatsappIcon} />
             <Text style={styles.contactButtonText}>Entrar em contato</Text>
           </RectButton>
